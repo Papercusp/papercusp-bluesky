@@ -1,0 +1,62 @@
+{
+  "distribution": "cupboard",
+  "kind": "plugin", "name": "bluesky", "version": "0.1.0", "papercusp": "^0.1.0",
+  "description": "Bluesky notifications and author posts, with host-held app-password sessions and publishing.",
+  "author": "Papercusp", "license": "MIT", "main": "./index.cjs",
+  "runtime": { "kind": "daemon", "daemonCommand": ["node", "daemon.cjs"] },
+  "capabilities": [], "tools": [],
+  "provider": {
+    "rateBudget": {
+      "verifiedAt": "2026-08-23",
+      "sources": [
+        "https://atproto.com/specs/event-stream",
+        "https://atproto.com/specs/xrpc",
+        "https://raw.githubusercontent.com/bluesky-social/atproto/main/lexicons/com/atproto/repo/createRecord.json",
+        "https://raw.githubusercontent.com/bluesky-social/atproto/main/lexicons/app/bsky/feed/post.json",
+        "https://raw.githubusercontent.com/bluesky-social/atproto/main/lexicons/com/atproto/repo/strongRef.json"
+      ],
+      "budgetHeaders": [
+        "Retry-After"
+      ],
+      "notes": "HTTP 429 with Retry-After is documented at connection time. A consumer that falls behind receives a \"too slow\" error and is disconnected, so the adapter must keep up or reconnect by cursor."
+    },
+    "verification": {
+      "verifiedAt": "2026-10-16",
+      "sources": [
+        "https://github.com/bluesky-social/atproto/tree/main/lexicons/app/bsky",
+        "https://github.com/bluesky-social/atproto/tree/main/lexicons/com/atproto/repo"
+      ],
+      "capabilities": {
+        "social.post": "2026-10-16",
+        "social.reply": "2026-10-16",
+        "social.delete": "2026-10-16"
+      }
+    },
+    "id": "bluesky", "contractVersion": 1, "displayName": "Bluesky",
+    "datatypes": ["social-post"], "capabilities": ["social.post", "social.reply", "social.delete"],
+    "egressHosts": ["bsky.social"],
+    "defaultDestinations": { "social-post": ["document", "event"] },
+    "setup": {
+      "credentials": [
+        { "key": "identifier", "label": "Bluesky handle or DID", "help": "Use the account hosted by bsky.social.", "placeholder": "your-handle.bsky.social" },
+        { "key": "app_password", "label": "Bluesky app password", "help": "Create a dedicated app password in Bluesky Settings → Privacy and security → App passwords.", "helpUrl": "https://bsky.app/settings/app-passwords" }
+      ],
+      "session": {
+        "url": "https://bsky.social/xrpc/com.atproto.server.createSession",
+        "refreshUrl": "https://bsky.social/xrpc/com.atproto.server.refreshSession",
+        "parameters": { "identifier": "identifier", "password": "app_password" },
+        "hosts": ["bsky.social"], "accessTokenField": "accessJwt", "refreshTokenField": "refreshJwt", "activeField": "active", "maxAgeSeconds": 3600,
+        "identity": { "idField": "did", "displayNameField": "handle", "credentialKey": "identifier" }
+      }
+    },
+    "configSchema": {
+      "type": "object", "required": ["accountId"], "additionalProperties": false,
+      "properties": {
+        "accountId": { "type": "string", "title": "Connected account DID", "readOnly": true },
+        "accountLabel": { "type": "string", "title": "Connected handle", "readOnly": true },
+        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 },
+        "maxPages": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 200 }
+      }
+    }
+  }
+}
